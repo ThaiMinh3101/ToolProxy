@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  tool-proxy:
+    build: .
+    container_name: tool-proxy-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./profiles:/app/profiles
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - HEADLESS=true
+      - PERSIST_STATE=true
+      - STATE_FILE_PATH=/app/data/state.json
+      - LOG_FILE_PATH=/app/logs/tool-proxy.log
+      - API_KEY=change-this-to-a-secure-key-in-prod
+      - TARGET_URL=https://httpbin.org/ip
+      - TASK_INTERVAL_MS=30000
+      - ROTATION_MODE=interval
+      - ROTATION_INTERVAL_MS=120000
+      - MAX_RETRIES=3
+      - RETRY_BACKOFF_MS=2000
+      - MAX_CYCLES_PER_BROWSER=10

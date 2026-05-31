@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tool Proxy Premium Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              mono: ["Fira Code", "monospace"],
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Custom Style for fine tuning -->
+    <style>
+      [x-cloak] { display: none !important; }
+      body {
+        background-color: #030712;
+        background-image: 
+          radial-gradient(at 0% 0%, hsla(244,100%,15%, 0.3) 0px, transparent 50%),
+          radial-gradient(at 100% 100%, hsla(168,100%,13%, 0.2) 0px, transparent 50%);
+        background-attachment: fixed;
+      }
+      /* Custom Scrollbar for Terminal */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+      }
+    </style>
+  </head>
+  <body class="text-slate-100 min-h-screen font-sans antialiased pb-12" x-data="dashboard()" x-init="init()" x-cloak>
+    
+    <!-- Top Nav Bar -->
+    <header class="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-6 py-4">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-100 via-slate-200 to-slate-400 bg-clip-text text-transparent">Tool Proxy</h1>
+            <p class="text-xs text-slate-400">Premium Multi-Account Anti-Detect Automation</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Connection Status Badge -->
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" :class="sseConnected ? 'bg-emerald-400' : 'bg-rose-400'"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2" :class="sseConnected ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+            </span>
+            <span class="text-slate-300" x-text="sseConnected ? 'Live Broadcast' : 'Disconnected'"></span>
+          </div>
+
+          <!-- API Key Lock Button -->
+          <button @click="showAuthModal = true" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200" 
+                  :class="apiKey ? 'bg-emerald-950/30 border-emerald-800/80 text-emerald-400 hover:bg-emerald-900/40' : 'bg-rose-950/30 border-rose-800/80 text-rose-400 hover:bg-rose-900/40'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            <span x-text="apiKey ? 'Auth: Configured' : 'Auth: Unsecured'"></span>
+          </button>
+
+          <button @click="refreshDashboard()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-xl text-xs font-semibold transition-all">
+            Refresh
+          </button>
+          <button @click="rotateAll()" class="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-orange-950/20 transition-all">
+            Rotate All
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 mt-8 space-y-8">
+      
+      <!-- Feedback Message toast -->
+      <div x-show="toast.show" x-transition class="fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl max-w-sm"
+           :class="toast.type === 'success' ? 'bg-slate-900 border-emerald-800/80 text-emerald-400' : 'bg-slate-900 border-rose-800/80 text-rose-400'">
+        <span x-text="toast.message"></span>
+        <button @click="toast.show = false" class="text-slate-400 hover:text-slate-200 text-xs">&times;</button>
+      </div>
+
+      <!-- Dashboard Stats Cards -->
+      <section class="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-4 rounded-2xl flex flex-col justify-between">
+          <span class="text-xs text-slate-400 font-medium">API Server</span>
+          <strong class="text-lg mt-2 text-emerald-400" x-text="sseConnected ? 'ONLINE' : 'OFFLINE'">-</strong>
+        </div>
+        <div class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-4 rounded-2xl flex flex-col justify-between">
+          <span class="text-xs text-slate-400 font-medium">Uptime</span>
+          <strong class="text-lg mt-2" x-text="fmtSec(stats.uptimeSec)">-</strong>
+        </div>
+        <div class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-4 rounded-2xl flex flex-col justify-between">
+          <span class="text-xs text-slate-400 font-medium">Rotation Mode</span>
+          <strong class="text-lg mt-2 capitalize" x-text="stats.rotationMode || '-'">-</strong>
+        </div>
+        <div class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-4 rounded-2xl flex flex-col justify-between">
+          <span class="text-xs text-slate-400 font-medium">Task Interval</span>
+          <strong class="text-lg mt-2" x-text="stats.taskIntervalMs ? stats.taskIntervalMs + ' ms' : '-'">-</strong>
+        </div>
+        <div class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-4 rounded-2xl flex flex-col justify-between">
+          <span class="text-xs text-slate-400 font-medium">Active Proxies</span>
+          <strong class="text-lg mt-2 text-emerald-400" x-text="proxies.length">0</strong>
+        </div>
+        <div class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-4 rounded-2xl flex flex-col justify-between">
+          <span class="text-xs text-slate-400 font-medium">Accounts (Sessions)</span>
+          <strong class="text-lg mt-2 text-indigo-400" x-text="sessions.length">0</strong>
+        </div>
+      </section>
+
+      <!-- Operations Panel: Forms -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Proxy Setup Form -->
+        <div class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-6 rounded-2xl space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <h2 class="text-md font-semibold text-slate-200">Proxy Import</h2>
+            <span class="text-xs text-slate-500 font-mono">Format: [Protocol://]IP:Port:User:Pass</span>
+          </div>
+
+          <!-- Single Proxy Form -->
+          <form @submit.prevent="addSingleProxy()" class="flex flex-col md:flex-row gap-3">
+            <input type="text" x-model="singleProxyInput" placeholder="192.168.1.100:8080:user:pass hoặc socks5://1.2.3.4:1080:user:pass" 
+                   class="flex-1 bg-slate-950/75 border border-slate-800 focus:border-emerald-500 text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-2.5 outline-none transition-all" required />
+            <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-950/20 active:scale-95 transition-all">
+              Add Proxy
+            </button>
+          </form>
+
+          <!-- Bulk Proxy Form -->
+          <form @submit.prevent="addBulkProxies()" class="space-y-3">
+            <textarea x-model="bulkProxyInput" rows="3" placeholder="Nhập danh sách proxy (Mỗi dòng một proxy hoặc phân tách bằng dấu phẩy)..." 
+                      class="w-full bg-slate-950/75 border border-slate-800 focus:border-emerald-500 text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 outline-none transition-all"></textarea>
+            <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-950/20 active:scale-95 transition-all">
+              Import Bulk Proxies
+            </button>
+          </form>
+        </div>
+
+        <!-- Account Creator Form -->
+        <div class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-6 rounded-2xl space-y-6">
+          <div class="border-b border-slate-800/80 pb-3">
+            <h2 class="text-md font-semibold text-slate-200">Account Manager</h2>
+          </div>
+
+          <form @submit.prevent="addAccount()" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="text-xs text-slate-400 font-medium">Account ID</label>
+                <input type="text" x-model="accountForm.accountId" placeholder="e.g. facebook-acc-01" 
+                       class="w-full bg-slate-950/75 border border-slate-800 focus:border-emerald-500 text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-2.5 outline-none transition-all" required />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-xs text-slate-400 font-medium">Target URL (Optional)</label>
+                <input type="url" x-model="accountForm.targetUrl" placeholder="https://httpbin.org/ip" 
+                       class="w-full bg-slate-950/75 border border-slate-800 focus:border-emerald-500 text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-2.5 outline-none transition-all" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <div class="space-y-1.5">
+                <label class="text-xs text-slate-400 font-medium">Kịch bản (Script Plugin)</label>
+                <select x-model="accountForm.scriptName" 
+                        class="w-full bg-slate-950/75 border border-slate-800 focus:border-emerald-500 text-sm text-slate-100 rounded-xl px-4 py-2.5 outline-none transition-all">
+                  <option value="defaultTask.js">Mặc định (Check IP)</option>
+                  <option value="loginFacebook.js">Đăng nhập Facebook (loginFacebook.js)</option>
+                  <option value="viewYoutube.js">Xem Youtube (viewYoutube.js)</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-3 mt-5">
+                <label class="relative flex items-center cursor-pointer">
+                  <input type="checkbox" x-model="accountForm.autostart" class="sr-only peer" checked />
+                  <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <span class="ml-3 text-xs text-slate-400 font-medium select-none">Tự chạy khi tạo</span>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg active:scale-95 transition-all">
+              Create Automation Account
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Account Management Table -->
+      <section class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between">
+          <h2 class="text-md font-semibold text-slate-200">Active Sessions</h2>
+          <span class="text-xs px-2.5 py-1 bg-slate-950/70 border border-slate-800 text-slate-400 rounded-lg" x-text="sessions.length + ' accounts'"></span>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-sm text-slate-300 border-collapse">
+            <thead class="bg-slate-950/50 text-slate-400 text-xs font-semibold tracking-wider uppercase border-b border-slate-800/60">
+              <tr>
+                <th class="px-6 py-4">Account ID</th>
+                <th class="px-6 py-4">Kịch Bản</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4">Proxy Connection & GeoIP Info</th>
+                <th class="px-6 py-4">Stats (Success/Fail)</th>
+                <th class="px-6 py-4">Last Error</th>
+                <th class="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <template x-if="sessions.length === 0">
+                <tr>
+                  <td colspan="7" class="px-6 py-8 text-center text-slate-500 font-mono text-xs">Không tìm thấy tài khoản nào. Hãy thêm tài khoản mới ở trên.</td>
+                </tr>
+              </template>
+              <template x-for="session in sessions" :key="session.accountId">
+                <tr class="hover:bg-slate-800/20 transition-all">
+                  <td class="px-6 py-4 font-semibold text-slate-200" x-text="session.accountId"></td>
+                  <td class="px-6 py-4">
+                    <span class="px-2 py-1 rounded bg-slate-950/80 border border-slate-800 text-xs text-indigo-400 font-mono" x-text="session.scriptName"></span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border"
+                          :class="session.running ? 'bg-emerald-950/30 border-emerald-900/50 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-500'">
+                      <span class="w-1.5 h-1.5 rounded-full" :class="session.running ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'"></span>
+                      <span x-text="session.running ? 'running' : 'stopped'"></span>
+                    </span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <template x-if="session.proxy">
+                      <div class="space-y-1 text-xs">
+                        <div class="font-mono text-slate-300 flex items-center gap-1">
+                          <span class="text-slate-500">Host:</span>
+                          <span x-text="session.proxy.host + ':' + session.proxy.port"></span>
+                        </div>
+                        <template x-if="session.proxy.geo">
+                          <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span class="px-1.5 py-0.5 rounded bg-slate-950/70 border border-slate-800 text-[10px] text-emerald-400 font-semibold" x-text="session.proxy.geo.ip"></span>
+                            <span class="text-[10px] text-indigo-400 font-medium" x-text="session.proxy.geo.country"></span>
+                            <span class="text-[10px] text-slate-500 font-mono" x-text="session.proxy.geo.timezone"></span>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                    <template x-if="!session.proxy">
+                      <span class="text-slate-500 font-mono text-xs">chưa kết nối</span>
+                    </template>
+                  </td>
+                  <td class="px-6 py-4 font-mono text-xs">
+                    <div class="flex items-center gap-2">
+                      <span class="text-emerald-400" x-text="session.stats?.successCount || 0">0</span>
+                      <span class="text-slate-600">/</span>
+                      <span class="text-rose-400" x-text="session.stats?.failureCount || 0">0</span>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 text-xs max-w-xs truncate text-rose-300 font-mono" :title="session.stats?.lastError" x-text="session.stats?.lastError || '-'"></td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-1.5">
+                      <button @click="startAccount(session.accountId)" :disabled="session.running" class="p-1.5 bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-900/60 rounded-lg text-emerald-400 disabled:opacity-40 disabled:pointer-events-none transition-all" title="Start">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                      </button>
+                      <button @click="stopAccount(session.accountId)" :disabled="!session.running" class="p-1.5 bg-rose-950/50 hover:bg-rose-900/60 border border-rose-900/60 rounded-lg text-rose-400 disabled:opacity-40 disabled:pointer-events-none transition-all" title="Stop">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                      </button>
+                      <button @click="rotateAccount(session.accountId)" class="p-1.5 bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 rounded-lg text-amber-400 transition-all" title="Rotate Proxy">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2" /></svg>
+                      </button>
+                      <button @click="removeAccount(session.accountId)" class="p-1.5 bg-slate-950/60 hover:bg-red-950/60 border border-slate-800 hover:border-red-900 text-slate-400 hover:text-red-400 rounded-lg transition-all" title="Remove Account">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Proxy Pool Manager -->
+      <section class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between">
+          <h2 class="text-md font-semibold text-slate-200">Proxy Pool</h2>
+          <span class="text-xs px-2.5 py-1 bg-slate-950/70 border border-slate-800 text-slate-400 rounded-lg" x-text="proxies.length + ' proxies'"></span>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-sm text-slate-300 border-collapse">
+            <thead class="bg-slate-950/50 text-slate-400 text-xs font-semibold tracking-wider uppercase border-b border-slate-800/60">
+              <tr>
+                <th class="px-6 py-4">Giao Thức</th>
+                <th class="px-6 py-4">Proxy Host</th>
+                <th class="px-6 py-4">Port</th>
+                <th class="px-6 py-4">Tài Khoản Proxy</th>
+                <th class="px-6 py-4">Trạng Thái Gán</th>
+                <th class="px-6 py-4">Success</th>
+                <th class="px-6 py-4">Fail</th>
+                <th class="px-6 py-4">Disabled Until (Cooldown)</th>
+                <th class="px-6 py-4 text-right">Hành Động</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <template x-if="proxies.length === 0">
+                <tr>
+                  <td colspan="9" class="px-6 py-8 text-center text-slate-500 font-mono text-xs">Chưa cấu hình Proxy nào. Hãy thêm proxy để chạy kịch bản.</td>
+                </tr>
+              </template>
+              <template x-for="proxy in proxies" :key="proxy.id">
+                <tr class="hover:bg-slate-800/20 transition-all" :class="isProxyCoolingDown(proxy) ? 'opacity-55' : ''">
+                  <td class="px-6 py-4">
+                    <span class="px-1.5 py-0.5 rounded font-semibold text-[10px] uppercase font-mono"
+                          :class="proxy.protocol === 'socks5' ? 'bg-indigo-950 border border-indigo-900 text-indigo-400' : 'bg-slate-950 border border-slate-800 text-slate-400'"
+                          x-text="proxy.protocol"></span>
+                  </td>
+                  <td class="px-6 py-4 font-mono font-medium text-slate-200" x-text="proxy.host"></td>
+                  <td class="px-6 py-4 font-mono text-slate-300" x-text="proxy.port"></td>
+                  <td class="px-6 py-4 font-mono text-xs text-slate-400" x-text="proxy.username || '-'"></td>
+                  <td class="px-6 py-4">
+                    <template x-if="proxy.inUseBy">
+                      <span class="px-2 py-0.5 rounded bg-slate-950 text-indigo-400 font-semibold text-xs border border-indigo-950" x-text="proxy.inUseBy"></span>
+                    </template>
+                    <template x-if="!proxy.inUseBy">
+                      <span class="text-slate-500 text-xs">Trống</span>
+                    </template>
+                  </td>
+                  <td class="px-6 py-4 font-mono text-xs text-emerald-400" x-text="proxy.successCount || 0">0</td>
+                  <td class="px-6 py-4 font-mono text-xs text-rose-400" x-text="proxy.failureCount || 0">0</td>
+                  <td class="px-6 py-4 text-xs font-mono">
+                    <span x-text="proxy.disabledUntil ? fmtDate(proxy.disabledUntil) : '-'"
+                          :class="isProxyCoolingDown(proxy) ? 'text-amber-400 font-semibold' : 'text-slate-500'"></span>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <button @click="removeProxy(proxy.id)" class="p-1.5 bg-slate-950/60 hover:bg-red-950/60 border border-slate-800 hover:border-red-900 text-slate-400 hover:text-red-400 rounded-lg transition-all" title="Xóa Proxy">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Logs Console Terminal -->
+      <section class="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-2xl overflow-hidden flex flex-col">
+        <div class="px-6 py-4 border-b border-slate-800/80 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+            <h2 class="text-md font-semibold text-slate-200 ml-2 font-mono">Live Logs Terminal</h2>
+          </div>
+          
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-xs text-slate-400 font-medium">
+              Số dòng:
+              <input type="number" x-model="logLimit" min="10" max="1000" class="w-16 bg-slate-950 text-slate-200 border border-slate-800 rounded-lg px-2 py-1 text-center font-mono focus:outline-none" />
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-400 select-none">
+              <input type="checkbox" x-model="autoRefreshLogs" class="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-0" />
+              Tự động cuộn
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-400 select-none">
+              <input type="checkbox" x-model="scopeCurrentOnly" class="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-0" />
+              Phiên hiện tại
+            </label>
+            <button @click="refreshLogs()" class="px-3 py-1.5 bg-slate-950 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold transition-all">
+              Tải lại logs
+            </button>
+            <button @click="clearLogs()" class="px-3 py-1.5 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-900/50 text-rose-400 rounded-lg text-xs font-semibold transition-all">
+              Xóa log
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-black/90 p-4 border-b border-slate-800 text-slate-300 font-mono text-xs flex gap-4">
+          <span class="text-slate-500 font-bold">LỌC LOGS:</span>
+          <button @click="selectedLogLevel = 'ALL'" class="hover:text-white" :class="selectedLogLevel === 'ALL' ? 'text-emerald-400 font-bold border-b border-emerald-400' : 'text-slate-400'">ALL</button>
+          <button @click="selectedLogLevel = 'INFO'" class="hover:text-white" :class="selectedLogLevel === 'INFO' ? 'text-indigo-400 font-bold border-b border-indigo-400' : 'text-slate-400'">INFO</button>
+          <button @click="selectedLogLevel = 'WARN'" class="hover:text-white" :class="selectedLogLevel === 'WARN' ? 'text-amber-400 font-bold border-b border-amber-400' : 'text-slate-400'">WARN</button>
+          <button @click="selectedLogLevel = 'ERROR'" class="hover:text-white" :class="selectedLogLevel === 'ERROR' ? 'text-rose-400 font-bold border-b border-rose-400' : 'text-slate-400'">ERROR</button>
+        </div>
+
+        <!-- Scrollable log window -->
+        <pre id="logOutput" class="p-6 bg-black/95 font-mono text-[11px] h-96 overflow-y-auto leading-relaxed custom-scrollbar select-text selection:bg-slate-800 text-slate-400">
+          <template x-for="log in filteredLogs" :key="log.ts + log.message">
+            <div class="py-0.5 border-b border-slate-900/50 hover:bg-slate-900/50 flex gap-2">
+              <span class="text-slate-600 text-[10px]" x-text="fmtTime(log.ts)"></span>
+              <span class="font-bold shrink-0" :class="getLogLevelColor(log.level)" x-text="'[' + log.level.toUpperCase() + ']'"></span>
+              <span class="text-slate-100 flex-1 break-all" x-text="log.message"></span>
+              <template x-if="Object.keys(log).length > 3">
+                <span class="text-slate-500 text-[10px]" x-text="getLogMeta(log)"></span>
+              </template>
+            </div>
+          </template>
+        </pre>
+      </section>
+    </main>
+
+    <!-- API KEY CONFIGURATION MODAL -->
+    <div x-show="showAuthModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4" x-transition>
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-6 shadow-2xl relative" @click.away="showAuthModal = false">
+        
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-lg font-bold text-slate-200">API Key Authentication</h3>
+          <button @click="showAuthModal = false" class="text-slate-400 hover:text-slate-200 text-lg font-bold">&times;</button>
+        </div>
+
+        <p class="text-sm text-slate-400 leading-relaxed">
+          Nhập API Key bảo mật để kết nối với server. Key này được lưu trực tiếp vào LocalStorage trình duyệt và được gửi qua header <code class="bg-slate-950 px-1 py-0.5 rounded text-xs text-indigo-400">x-api-key</code>.
+        </p>
+
+        <div class="space-y-2">
+          <label class="text-xs text-slate-400 font-semibold">API Secret Key</label>
+          <input type="password" x-model="apiKeyInput" placeholder="Nhập API Key cấu hình trong .env..."
+                 class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-2.5 outline-none transition-all" />
+        </div>
+
+        <div class="flex gap-3 justify-end pt-2">
+          <button @click="showAuthModal = false" class="px-4 py-2 border border-slate-800 text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-800 transition-all">
+            Cancel
+          </button>
+          <button @click="saveApiKey()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg transition-all">
+            Save & Connect
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Frontend logic script link -->
+    <script src="/script.js"></script>
+  </body>
+</html>
