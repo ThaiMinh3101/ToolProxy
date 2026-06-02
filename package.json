@@ -2,12 +2,13 @@
   "name": "tool-proxy-automation",
   "version": "1.0.0",
   "description": "Production-ready multi-account browser automation with rotating proxies",
-  "main": "src/index.js",
+  "main": "main.js",
   "type": "commonjs",
   "scripts": {
     "dev": "node src/index.js",
     "dev:watch": "node --watch src/index.js",
-    "start": "node src/index.js",
+    "start": "electron .",
+    "build:app": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win --dir && xcopy scripts dist\\win-unpacked\\scripts\\ /E /I /Y && copy .env.example dist\\win-unpacked\\.env /Y",
     "check": "node --check src/index.js && node --check src/accountManager.js && node --check src/browserSession.js && node --check src/config.js && node --check src/logger.js && node --check src/proxyManager.js && node --check src/stateStore.js && node --check public/script.js"
   },
   "keywords": [
@@ -32,12 +33,24 @@
     "user-agents": "^1.1.250"
   },
   "devDependencies": {
-    "pkg": "^5.8.1"
+    "electron": "^31.0.0",
+    "electron-builder": "^26.8.1"
   },
-  "pkg": {
-    "assets": [
-      "public/**/*"
+  "build": {
+    "appId": "com.toolproxy.automation",
+    "productName": "ToolProxy",
+    "win": {
+      "target": "dir"
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "public/**/*",
+      "main.js",
+      "package.json",
+      "node_modules/**/*"
     ]
-  },
-  "bin": "src/index.js"
+  }
 }
