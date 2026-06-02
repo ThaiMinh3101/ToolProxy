@@ -3,6 +3,10 @@ require("dotenv").config();
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+
+// Đặt thư mục cache cục bộ cho Puppeteer để khi chạy bằng .exe vẫn tải/dùng đúng trình duyệt
+process.env.PUPPETEER_CACHE_DIR = path.join(process.cwd(), ".cache", "puppeteer");
+
 const express = require("express");
 const { readConfig } = require("./config");
 const { Logger } = require("./logger");
